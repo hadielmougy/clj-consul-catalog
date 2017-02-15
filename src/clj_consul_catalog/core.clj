@@ -12,6 +12,17 @@
     (str path "/" loc)))
 
 
+
+(defn- keyword->capital [x]
+  (let [words (clojure.string/split x #"-")
+        capitalwords (map #(clojure.string/capitalize (name %)) words)]
+    (clojure.string/join capitalwords)))
+
+
+(defn- transform [orig]
+  (into {} (map (fn [[k v]] {(keyword->capital (name k)) v}) orig)))
+
+
 (defn- deref-with-default [ref]
   (deref ref 2000 false))
 
@@ -59,22 +70,20 @@
 
 
 (defn register [path info]
+  "{:node \"DESKTOP-2RC0A0R\"
+  :addr \"127.0.0.1\"
+  :service-id  \"redis1\"
+  :service-name  \"redis\"
+  :service-addr  \"127.0.0.1\"
+  :service-port  8000}"
   (exec path "register" (with-http (register-request info))))
 
 
 
-(defn- deregister-request [{:keys [datacenter node service-id]}]
-  {"Datacenter" datacenter
-   "Node" node
-   "ServiceID" service-id})
-
 
 (defn deregister [path info]
-  (exec path "deregister" (with-http (deregister-request info))))
-
-
-(defn node []
-  )
-
-(defn watch []
-  )
+  "{:datacenter \"dc1\"
+    :node \"DESKTOP-2RC0A0R\"
+    :service-id \"redis1\"}
+    "
+  (exec path "deregister" (with-http (transform info))))
