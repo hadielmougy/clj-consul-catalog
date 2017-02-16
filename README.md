@@ -15,6 +15,7 @@ Consul client for registering and deregistring external service with clojure
 (:require [clj-consul-catalog.core :refer [register deregister]])
 
 ## Examples
+
 ```clojure
 (register "http://localhost:8500/v1/catalog/" 
         {:node    "DESKTOP-2RC0A0R"
