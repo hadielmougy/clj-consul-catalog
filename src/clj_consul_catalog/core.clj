@@ -23,7 +23,6 @@
 
 
 (defn- transform [orig]
-  ;(into {} (map (fn [[k v]] {(keyword->capital k) v}) orig))
   (clojure.walk/postwalk (fn [k] (if (keyword? k) (keyword->capital k) k))
                          orig))
 
@@ -60,7 +59,7 @@
 
 
 (defn service [path name]
-  (exec path (str "services/" name) (with-http)))
+  (exec path (str "service/" name) (with-http)))
 
 (defn- with-hash [val inner]
   (hash (get-in val inner)))
@@ -75,13 +74,16 @@
 
 
 (defn register [path info]
-  (let [hsh (with-hash info [:service :id])]
-    (swap! reject-repo (fn [m] (remove-> #(= hsh %))))
+  (let [hsh (with-hash info [:service :id])
+        exe (fn [](exec path "register" (with-http (transform info))))
+        added (exe)]
+    (swap! reject-repo (fn [_] (remove-> #(= hsh %))))
     (go-loop []
       (<! (timeout 10000))
       (when (not (ifsome #(= hsh %)))
-        (do (exec path "register" (with-http (transform info)))
-            (recur))))))
+        (exe)
+        (recur)))
+    added))
 
 
 
