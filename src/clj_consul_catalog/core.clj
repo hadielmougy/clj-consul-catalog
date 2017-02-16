@@ -14,13 +14,15 @@
 
 
 (defn- keyword->capital [x]
-  (let [words (clojure.string/split x #"-")
-        capitalwords (map #(clojure.string/capitalize (name %)) words)]
+  (let [words (clojure.string/split (name x) #"-")
+        capitalwords (map #(clojure.string/capitalize %) words)]
     (clojure.string/join capitalwords)))
 
 
 (defn- transform [orig]
-  (into {} (map (fn [[k v]] {(keyword->capital (name k)) v}) orig)))
+  ;(into {} (map (fn [[k v]] {(keyword->capital k) v}) orig))
+  (clojure.walk/postwalk (fn [k] (if (keyword? k) (keyword->capital k) k))
+                         orig))
 
 
 (defn- deref-with-default [ref]
@@ -58,25 +60,18 @@
   (exec path (str "services/" name) (with-http)))
 
 
-(defn- register-request [{:keys [node addr service-name service-id service-addr service-port]}]
-  {"Node" node
-   "Address" addr
-   "Service" {
-      "ID"  service-id
-      "Service"  service-name
-      "Address"  service-addr
-      "Port"  service-port
-    }})
 
 
 (defn register [path info]
-  "{:node \"DESKTOP-2RC0A0R\"
-  :addr \"127.0.0.1\"
-  :service-id  \"redis1\"
-  :service-name  \"redis\"
-  :service-addr  \"127.0.0.1\"
-  :service-port  8000}"
-  (exec path "register" (with-http (register-request info))))
+  "{:node    \"DESKTOP-2RC0A0R\"
+    :address \"127.0.0.1\"
+    :service {
+      :id \"redis1\"
+      :service \"redis\"
+      :address \"127.0.0.1\"
+      :port 8000}
+    }"
+  (exec path "register" (with-http (transform info))))
 
 
 
@@ -84,6 +79,5 @@
 (defn deregister [path info]
   "{:datacenter \"dc1\"
     :node \"DESKTOP-2RC0A0R\"
-    :service-id \"redis1\"}
-    "
+    :service-id \"redis1\"}"
   (exec path "deregister" (with-http (transform info))))
