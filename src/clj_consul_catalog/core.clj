@@ -1,10 +1,13 @@
 (ns clj-consul-catalog.core
   (:require [org.httpkit.client :as http]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [clojure.core.async :refer [timeout go-loop <! >!] :include-macros true]))
 
 
-(defn- merge-defaults [src inf]
-  (json/write-str (merge src inf)))
+
+(defonce ^:private reject-repo (atom #{}))
+
+
 
 (defn- with-ctx [path loc]
   (if (clojure.string/ends-with? path "/")
@@ -59,25 +62,31 @@
 (defn service [path name]
   (exec path (str "services/" name) (with-http)))
 
+(defn- with-hash [val inner]
+  (hash (get-in val inner)))
 
+(defn- function<-hash [f hsh]
+  (f hsh @reject-repo))
+
+
+(def ^:private remove-> (partial function<-hash remove))
+
+(def ^:private ifsome (partial function<-hash some))
 
 
 (defn register [path info]
-  "{:node    \"DESKTOP-2RC0A0R\"
-    :address \"127.0.0.1\"
-    :service {
-      :id \"redis1\"
-      :service \"redis\"
-      :address \"127.0.0.1\"
-      :port 8000}
-    }"
-  (exec path "register" (with-http (transform info))))
+  (let [hsh (with-hash info [:service :id])]
+    (swap! reject-repo (fn [m] (remove-> #(= hsh %))))
+    (go-loop []
+      (<! (timeout 10000))
+      (when (not (ifsome #(= hsh %)))
+        (do (exec path "register" (with-http (transform info)))
+            (recur))))))
 
 
 
 
 (defn deregister [path info]
-  "{:datacenter \"dc1\"
-    :node \"DESKTOP-2RC0A0R\"
-    :service-id \"redis1\"}"
-  (exec path "deregister" (with-http (transform info))))
+  (do
+    (swap! reject-repo #(conj % (with-hash info [:service-id])))
+    (exec path "deregister" (with-http (transform info)))))
