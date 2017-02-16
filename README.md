@@ -6,7 +6,9 @@ Consul client for registering and deregistring external service with clojure
 
 ### Leiningen/Boot
 
+```clojure
 [clj-consul-catalog "0.1.0-SNAPSHOT"]
+```
 
 ## Usage
 
