@@ -12,7 +12,9 @@ Consul client for registering and deregistring external service with clojure
 
 ## Usage
 
+```clojure
 (:require [clj-consul-catalog.core :refer [register deregister]])
+```
 
 ## Examples
 
