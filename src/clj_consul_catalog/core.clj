@@ -78,11 +78,11 @@
         exe (fn [](exec path "register" (with-http (transform info))))
         added (exe)]
     (swap! reject-repo (fn [_] (remove-> #(= hsh %))))
-    (go-loop []
-      (<! (timeout 10000))
-      (when (not (ifsome #(= hsh %)))
-        (exe)
-        (recur)))
+    (when added (go-loop []
+                  (<! (timeout 10000))
+                  (when (not (ifsome #(= hsh %)))
+                    (exe)
+                    (recur))))
     added))
 
 
