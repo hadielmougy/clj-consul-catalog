@@ -64,13 +64,13 @@
 (defn- with-hash [val inner]
   (hash (get-in val inner)))
 
-(defn- function<-hash [f hsh]
+(defn- apply> [f hsh]
   (f hsh @reject-repo))
 
 
-(def ^:private remove-> (partial function<-hash remove))
+(def ^:private remove-> (partial apply> remove))
 
-(def ^:private ifsome (partial function<-hash some))
+(def ^:private ifsome (partial apply> some))
 
 
 (defn register [path info]
