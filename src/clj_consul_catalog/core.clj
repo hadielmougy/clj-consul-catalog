@@ -70,7 +70,7 @@
 
 (def ^:private remove-> (partial apply> remove))
 
-(def ^:private ifsome (partial apply> some))
+(def ^:private ifsome? (partial apply> some))
 
 
 (defn register [path info]
@@ -80,7 +80,7 @@
     (swap! reject-repo (fn [_] (remove-> #(= hsh %))))
     (when added (go-loop []
                   (<! (timeout 10000))
-                  (when (not (ifsome #(= hsh %)))
+                  (when (not (ifsome? #(= hsh %)))
                     (exe)
                     (recur))))
     added))
