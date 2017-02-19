@@ -73,13 +73,14 @@
 (def ^:private ifsome? (partial apply> some))
 
 
-(defn register [path info]
+(defn register [path info & options]
   (let [hsh (with-hash info [:service :id])
+        {:keys [interval] :or {interval 10}} options
         exe (fn [](exec path "register" (with-http (transform info))))
         added (exe)]
     (swap! reject-repo (fn [_] (remove-> #(= hsh %))))
     (when added (go-loop []
-                  (<! (timeout 10000))
+                  (<! (timeout (* interval 1000)))
                   (when (not (ifsome? #(= hsh %)))
                     (exe)
                     (recur))))
@@ -89,6 +90,5 @@
 
 
 (defn deregister [path info]
-  (do
-    (swap! reject-repo #(conj % (with-hash info [:service-id])))
-    (exec path "deregister" (with-http (transform info)))))
+  (swap! reject-repo #(conj % (with-hash info [:service-id])))
+  (exec path "deregister" (with-http (transform info))))
