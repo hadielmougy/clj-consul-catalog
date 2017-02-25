@@ -1,4 +1,4 @@
-(defproject clj-consul-catalog "0.2.1-SNAPSHOT"
+(defproject clj-consul-catalog "0.2.2-SNAPSHOT"
   :description "Consul service registry client for clojure"
   :url "https://github.com/hadielmougy/clj-consul-catalog"
   :license {:name "Eclipse Public License"
