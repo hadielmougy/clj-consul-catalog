@@ -15,7 +15,7 @@
 
 (def path "http://localhost:8500/v1/catalog/")
 
-(def s (service path (schema "redis1" 8080)))
+(def s (service path (schema "redis1" 8080) :interval 10))
 
 
 (def s1 (service path (schema "redis2" 8081)))
