@@ -36,15 +36,6 @@ optional parameter :interval <value> can be added to service method to re-regist
 
 ```clojure
 
-(def path "http://localhost:8500/v1/catalog/")
-(def params {:node    "DESKTOP-2RC0A0R"
-             :address "127.0.0.1"
-             :service {
-                       :id "redis1"
-                       :service "redis"
-                       :address "127.0.0.1"
-                       :port 8080}}
-
 (def s (service path params :interval 10))
 
 ```
