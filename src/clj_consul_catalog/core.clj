@@ -7,6 +7,10 @@
 
 (defonce ^:private reject-repo (atom #{}))
 
+(defprotocol Service
+  (discover [this])
+  (register [this])
+  (deregister [this]))
 
 
 (defn- with-ctx [path loc]
@@ -30,6 +34,8 @@
 (defn- deref-with-default [ref]
   (deref ref 2000 false))
 
+
+
 (defn- with-http
   ([]
    (fn [x] (http/get x)))
@@ -47,19 +53,6 @@
         (json/read-str body)))))
 
 
-(defn datacenters [path]
-  (exec path "datacenters" (with-http)))
-
-
-(defn nodes [path]
-  (exec path "nodes" (with-http)))
-
-(defn services [path]
-  (exec path "services" (with-http)))
-
-
-(defn service [path name]
-  (exec path (str "service/" name) (with-http)))
 
 (defn- with-hash [val inner]
   (hash (get-in val inner)))
@@ -73,22 +66,30 @@
 (def ^:private ifsome? (partial apply> some))
 
 
-(defn register [path info & options]
-  (let [hsh (with-hash info [:service :id])
-        {:keys [interval] :or {interval 10}} options
-        exe (fn [](exec path "register" (with-http (transform info))))
-        added (exe)]
-    (swap! reject-repo (fn [_] (remove-> #(= hsh %))))
-    (when added (go-loop []
-                  (<! (timeout (* interval 1000)))
-                  (when (not (ifsome? #(= hsh %)))
-                    (exe)
-                    (recur))))
-    added))
+
+(defn service [path info & ops]
 
 
+  (reify Service
+
+    (discover [this]
+      (exec path (str "service/" (-> info :service :service)) (with-http)))
 
 
-(defn deregister [path info]
-  (swap! reject-repo #(conj % (with-hash info [:service-id])))
-  (exec path "deregister" (with-http (transform info))))
+    (register [this]
+      (let [hsh (with-hash info [:service :id])
+            {:keys [interval] :or {interval 10}} ops
+            beat (fn [](exec path "register" (with-http (transform info))))
+            added (beat)]
+        (swap! reject-repo (fn [_] (remove-> #(= hsh %))))
+        (when added (go-loop []
+                      (<! (timeout (* interval 1000)))
+                      (when (not (ifsome? #(= hsh %)))
+                        (beat)
+                        (recur))))
+        added))
+
+
+    (deregister [this]
+      (swap! reject-repo #(conj % (with-hash info [:service-id])))
+      (exec path "deregister" (with-http (transform info))))))
